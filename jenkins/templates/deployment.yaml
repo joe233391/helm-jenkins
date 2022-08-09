@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  labels:
+    app: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      containers:
+        - name: jenkins
+          image: 127.0.0.1:8086/jenkins:latest
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /var/jenkins_home
+              name: jenkins
+            - mountPath: /usr/java
+              name: java
+            - mountPath: /var/release
+              name: release
+          env:
+            - name: JENKINS_OPTS
+              value: {{.Values.jenkins.opts}}
+            - name: TZ
+              value: Asia/Taipei
+        - name: redis
+          image: redis:alpine
+          ports:
+            - containerPort: 6379
+        - name: mongo
+          image: mongo:latest
+          ports:
+            - containerPort: 27017
+          env: 
+            - name: MONGO_DATA_DIR
+              value: /data/db
+            - name: MONGO_LOG_DIR
+              value: /dev/null
+          command: ["mongod", "--port", "27017"]
+          volumeMounts:
+            - mountPath: /dump
+              name: mongo-dump
+            - mountPath: /docker-entrypoint-initdb.d/restore.sh
+              name: mongo-restore
+        - name: mongo-express
+          image: mongo-express:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: ME_CONFIG_MONGODB_SERVER
+              value: localhost
+            - name: VCAP_APP_PORT
+              value: "8082"
+        - name: mysql
+          image: mysql:latest
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: 7ujm9ol.
+          args: ["--default-authentication-plugin=mysql_native_password"]
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d
+              name: mysql-data
+      volumes:
+        - name: jenkins
+          hostPath:
+            path: {{.Values.jenkins.filePath}}
+            type: Directory
+        - name: java
+          hostPath:
+            path: {{.Values.javaPath}}
+            type: Directory
+        - name: release
+          hostPath:
+            path: {{.Values.releasePath}}
+            type: Directory
+        - name: mysql-data
+          hostPath:
+            path: {{.Values.mysql}}
+            type: Directory
+        - name: mongo-dump
+          hostPath:
+            path: {{.Values.mongoDump}}
+            type: Directory
+        - name: mongo-restore
+          hostPath:
+            path: {{.Values.mongoRestore}}
+            type: File
+      imagePullSecrets:
+        - name: registrykey-01

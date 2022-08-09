@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube
+  labels:
+    app: sonarqube
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+    spec:
+      containers:
+        - name: sonarqube
+          image: sonarqube:8.4.2-community
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube-data
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube-logs
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube-extensions
+          env:
+            - name: SONARQUBE_JDBC_USERNAME
+              value: sonar
+            - name: SONARQUBE_JDBC_PASSWORD
+              value: sonar
+            - name: SONARQUBE_JDBC_URL
+              value: jdbc:postgresql://localhost:5432/sonar
+            - name: TZ
+              value: Asia/Taipei
+          args: {{.Values.sonarqube.args}}
+        - name: postgres
+          image: postgres:12.4
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: sonar
+            - name: POSTGRES_PASSWORD
+              value: sonar
+            - name: TZ
+              value: Asia/Taipei
+        - name: adminer
+          image: adminer:4.7.7
+          ports:
+            - containerPort: 8080
+      volumes:
+        - name: sonarqube-config
+          hostPath:
+            path: {{.Values.sonarqube.filePath.config}}
+            type: Directory
+        - name: sonarqube-data
+          hostPath:
+            path: {{.Values.sonarqube.filePath.data}}
+            type: Directory
+        - name: sonarqube-logs
+          hostPath:
+            path: {{.Values.sonarqube.filePath.logs}}
+            type: Directory
+        - name: sonarqube-extensions
+          hostPath:
+            path: {{.Values.sonarqube.filePath.extensions}}
+            type: Directory
+        - name: postgres
+          hostPath:
+            path: {{.Values.postgres.filePath}}
+            type: Directory

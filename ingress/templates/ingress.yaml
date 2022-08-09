@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress
+spec:
+  rules:
+    - host: rd3server.com
+      http:
+        paths:
+          - backend:
+              serviceName: jenkins
+              servicePort: 8080
+            path: /jenkins
+          - backend:
+              serviceName: jenkins
+              servicePort: 8080
+            path: /
+          - backend:
+              serviceName: sonarqube
+              servicePort: 9000
+            path: /sonarqube

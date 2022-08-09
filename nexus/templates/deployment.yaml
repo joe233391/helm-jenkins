@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus
+  labels:
+    app: nexus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus
+  template:
+    metadata:
+      labels:
+        app: nexus
+    spec:
+      containers:
+        - name: nexus
+          image: sonatype/nexus3
+          ports:
+            - containerPort: 8081
+            - containerPort: 8086
+          volumeMounts:
+            - mountPath: /nexus-data
+              name: nexus
+          env:
+            - name: TZ
+              value: Asia/Taipei
+      volumes:
+        - name: nexus
+          hostPath:
+            path: {{.Values.nexus.filePath}}
+            type: Directory

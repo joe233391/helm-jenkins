@@ -1,0 +1,40 @@
+FROM jenkins/jenkins:2.284
+
+USER root
+
+# Install gradle
+RUN apt-get update && apt-get install -y unzip && apt-get install -y xz-utils
+ADD https://services.gradle.org/distributions/gradle-2.3-bin.zip /usr/local/lib/
+RUN mkdir /opt/gradle
+RUN unzip -d /opt/gradle /usr/local/lib/gradle-2.3-bin.zip
+RUN chmod -R 777 /opt/gradle/gradle-2.3
+ENV PATH=$PATH:/opt/gradle/gradle-2.3/bin
+
+# Install Nodejs
+ADD https://nodejs.org/dist/v12.19.0/node-v12.19.0-linux-x64.tar.xz /usr/local/lib/
+RUN mkdir /usr/local/lib/nodejs
+RUN tar -xJvf /usr/local/lib/node-v12.19.0-linux-x64.tar.xz -C /usr/local/lib/nodejs
+ENV PATH=$PATH:/usr/local/lib/nodejs/node-v12.19.0-linux-x64/bin
+
+# Install uglifycss
+RUN npm install uglifycss -g
+
+# Insatll sshpass
+RUN apt-get update && apt-get install -y sshpass
+RUN sed -i 's/#   StrictHostKeyChecking ask/StrictHostKeyChecking no/' /etc/ssh/ssh_config
+
+# Insatll rsync
+RUN apt-get update && apt-get install -y rsync
+
+# Install PHP 7.4 for Composer
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install -y php7.3 php7.3-curl php7.3-xdebug php7.3-xsl php7.3-dom php7.3-zip php7.3-mbstring && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+RUN php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
+RUN php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+RUN rm /tmp/composer-setup.php
+
+USER jenkins
+
+RUN git config --global http.sslverify false
